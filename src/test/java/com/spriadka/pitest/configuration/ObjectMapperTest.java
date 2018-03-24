@@ -23,7 +23,8 @@ public class ObjectMapperTest {
         Map<String, Object> mapping = new HashMap<>();
         mapping.put("targetClasses", "hello, world, how, are, you");
         PITestConfiguration piTestConfiguration = ObjectMapper.mapTo(PITestConfiguration.class, mapping);
-        Assert.assertEquals(piTestConfiguration.getTargetClasses(), new String[] {"hello","world","how","are","you"});
+        Assert.assertTrue("Target classes should be properly set",
+            Arrays.deepEquals(piTestConfiguration.getTargetClasses(), new String[] {"hello","world","how","are","you"}));
     }
 
     @Test

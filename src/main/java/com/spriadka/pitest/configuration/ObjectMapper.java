@@ -91,6 +91,7 @@ public class ObjectMapper {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private static <T> T[] handleArray(Object mappedValue, Class<T> setterArgumentType) {
         if (mappedValue != null && mappedValue.getClass().isArray()) {
             return (T[]) mappedValue;
@@ -100,6 +101,7 @@ public class ObjectMapper {
         return convertedList.toArray(array);
     }
 
+    @SuppressWarnings("unchecked")
     private static <T> List<T> getConvertedList(Class<T> parameterType, Object mappedValue) {
         final Class<?> aClass = mappedValue.getClass();
         if (List.class.isAssignableFrom(aClass)) {
