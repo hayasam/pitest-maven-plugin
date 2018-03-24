@@ -1,11 +1,16 @@
 package com.spriadka.pitest.configuration;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class ObjectMapper {
 
@@ -17,33 +22,128 @@ public class ObjectMapper {
             throw new RuntimeException("Failed to instantiate new " + clazz.getSimpleName(), e);
         }
         Arrays.stream(clazz.getMethods()).filter(method -> method.getName().startsWith("set"))
-            .forEach(method -> invokeMethodWithMappedValue(method, instance, instance.registerConfigurationItems()));
+            .forEach(
+                method -> invokeMethodWithMappedValue(method, instance, instance.registerConfigurationItems(), mapping));
         return instance;
     }
 
-    private static <T extends ConfigurationSection> void invokeMethodWithMappedValue(Method method, T instance, Collection<ConfigurationItem> configurationItems) {
+    private static <T extends ConfigurationSection> void invokeMethodWithMappedValue(Method method, T instance,
+        Collection<ConfigurationItem> configurationItems, Map<String, Object> mapping) {
         method.setAccessible(true);
         if (method.getParameterTypes().length != 1) {
             return;
         }
         String propertyName = extractPropertyName(method);
-        Optional<ConfigurationItem> correspondingConfigItem = configurationItems.stream()
-            .filter(configurationItem -> configurationItem.getName().equals(propertyName))
-            .findFirst();
-        if (!correspondingConfigItem.isPresent()) {
-
-        }
-        else {
-            try {
-                method.invoke(instance, correspondingConfigItem.get().get());
-            } catch (IllegalAccessException | InvocationTargetException e) {
-                e.printStackTrace();
-            }
+        Object configValue = mapping.get(propertyName);
+        Object convertedObject = convertObject(configValue, configurationItems, propertyName, method);
+        try {
+            method.invoke(instance, convertedObject);
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            e.printStackTrace();
         }
     }
 
     private static String extractPropertyName(Method method) {
         String propertyName = method.getName().substring(3);
         return String.format("%c%s", Character.toLowerCase(propertyName.charAt(0)), propertyName.substring(1));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Object convertObject(Object configValue, Collection<ConfigurationItem> configurationItems, String property, Method method) {
+        Optional<ConfigurationItem> correspondingConfigItem = configurationItems.stream()
+            .filter(configurationItem -> configurationItem.getName().equals(property))
+            .findFirst();
+        Class<?> setterArgumentType = method.getParameterTypes()[0];
+        if (!correspondingConfigItem.isPresent()) {
+            if (!ConfigurationSection.class.isAssignableFrom(setterArgumentType)) {
+                return null;
+            }
+            else {
+                if (configValue == null) {
+                    return mapTo((Class<ConfigurationSection>) setterArgumentType, Collections.emptyMap());
+                }
+                else {
+                    return mapTo((Class<ConfigurationSection>) setterArgumentType, (Map<String, Object>) configValue);
+                }
+            }
+        } else {
+            ConfigurationItem configurationItem = correspondingConfigItem.get();
+            Object mappedValue = getUserSetProperty(configValue, configurationItem);
+            if (mappedValue == null && configurationItem.getDefaultValue() != null) {
+                mappedValue = configurationItem.getDefaultValue();
+            }
+            if (mappedValue != null) {
+                return convert(mappedValue, setterArgumentType);
+            }
+        }
+        return null;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Object convert(Object mappedValue, Class<?> setterArgumentType) {
+        if (setterArgumentType.isArray()) {
+            return handleArray(mappedValue, setterArgumentType.getComponentType());
+        }
+        else if (ConfigurationSection.class.isAssignableFrom(setterArgumentType)) {
+            return mapTo((Class<ConfigurationSection>) setterArgumentType, (Map<String, Object>) mappedValue);
+        } else {
+            return convertToType(setterArgumentType, mappedValue.toString());
+        }
+    }
+
+    private static <T> T[] handleArray(Object mappedValue, Class<T> setterArgumentType) {
+        if (mappedValue != null && mappedValue.getClass().isArray()) {
+            return (T[]) mappedValue;
+        }
+        List<T> convertedList = getConvertedList(setterArgumentType, mappedValue);
+        T[] array = (T[]) Array.newInstance(setterArgumentType, convertedList.size());
+        return convertedList.toArray(array);
+    }
+
+    private static <T> List<T> getConvertedList(Class<T> parameterType, Object mappedValue) {
+        final Class<?> aClass = mappedValue.getClass();
+        if (List.class.isAssignableFrom(aClass)) {
+            return (List<T>) mappedValue;
+        } else if (String.class.isAssignableFrom(aClass)) {
+            final String value = (String) mappedValue;
+            final List<String> values = Arrays.stream(value.split("\\s*,\\s*")).collect(Collectors.toList());
+            List<T> convertedList = new ArrayList<>(values.size());
+            for (String v : values) {
+                convertedList.add((T) convertToType(parameterType, v));
+            }
+            return convertedList;
+        }
+
+        return null;
+    }
+
+    private static <T> Object convertToType(Class<T> clazz, String mappedValue) {
+        if (Integer.class.equals(clazz) || int.class.equals(clazz)) {
+            return Integer.valueOf(mappedValue);
+        } else if (Float.class.equals(clazz) || float.class.equals(clazz)) {
+            return Float.valueOf(mappedValue);
+        } else if (Double.class.equals(clazz) || double.class.equals(clazz)) {
+            return Double.valueOf(mappedValue);
+        } else if (Long.class.equals(clazz) || long.class.equals(clazz)) {
+            return Long.valueOf(mappedValue);
+        } else if (Boolean.class.equals(clazz) || boolean.class.equals(clazz)) {
+            return Boolean.valueOf(mappedValue);
+        } else if (String.class.equals(clazz)) {
+            return mappedValue;
+        }
+        return null;
+    }
+
+    private static Object getUserSetProperty(Object configValue, ConfigurationItem configurationItem) {
+        String systemPropertyKey = configurationItem.getSystemProperty();
+        if (systemPropertyKey != null && !systemPropertyKey.isEmpty()) {
+            String systemPropertyValue = System.getProperty(systemPropertyKey);
+            return systemPropertyValue != null ? systemPropertyValue : configValue;
+        }
+        return configValue;
+    }
+
+    private static class PropertyConverter<TO> {
+
     }
 }

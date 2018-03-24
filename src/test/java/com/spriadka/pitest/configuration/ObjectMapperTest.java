@@ -19,12 +19,34 @@ public class ObjectMapperTest {
     }
 
     @Test
+    public void should_map_pitest_configuration_correctly() {
+        Map<String, Object> mapping = new HashMap<>();
+        mapping.put("targetClasses", "hello, world, how, are, you");
+        PITestConfiguration piTestConfiguration = ObjectMapper.mapTo(PITestConfiguration.class, mapping);
+        Assert.assertEquals(piTestConfiguration.getTargetClasses(), new String[] {"hello","world","how","are","you"});
+    }
+
+    @Test
+    public void should_map_nested_properties_properly() {
+        Map<String, Object> mapping = new HashMap<>();
+        Map<String, Object> scmMapping = new HashMap<>();
+        scmMapping.put("range","HEAD~2");
+        scmMapping.put("include","Hello,World");
+        mapping.put("scm", scmMapping);
+        PITestConfiguration piTestConfiguration = ObjectMapper.mapTo(PITestConfiguration.class, mapping);
+        ScmConfiguration scmConfiguration = new ScmConfiguration();
+        scmConfiguration.setRange("HEAD~2");
+        scmConfiguration.setInclude(new String[] {"Hello"});
+        Assert.assertEquals(piTestConfiguration.getScm(), scmConfiguration);
+    }
+
+    @Test
     public void should_map_mapping_correctly() {
         Map<String, Object> mapping = new HashMap<>();
         mapping.put("hello", "sentence");
         mapping.put("sauron", "frodo");
         configurationSection = ObjectMapper.mapTo(CorrectlyMappedClass.class, mapping);
-        Assert.assertEquals(configurationSection.hello, "sentence");
+        Assert.assertEquals("sentence", configurationSection.hello);
     }
 
     private class PrivateAccessClazz implements ConfigurationSection {
@@ -57,7 +79,8 @@ public class ObjectMapperTest {
 
         @Override
         public List<ConfigurationItem> registerConfigurationItems() {
-            return Arrays.asList(new ConfigurationItem<>("hello","","world"), new ConfigurationItem<>("sauron","","abrakadabra"));
+            return Arrays.asList(new ConfigurationItem("hello","","world"),
+                new ConfigurationItem("sauron","","abrakadabra"));
         }
     }
 
