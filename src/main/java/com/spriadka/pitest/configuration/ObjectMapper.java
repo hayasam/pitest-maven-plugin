@@ -3,6 +3,8 @@ package com.spriadka.pitest.configuration;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -49,7 +51,8 @@ public class ObjectMapper {
     }
 
     @SuppressWarnings("unchecked")
-    private static Object convertObject(Object configValue, Collection<ConfigurationItem> configurationItems, String property, Method method) {
+    private static Object convertObject(Object configValue, Collection<ConfigurationItem> configurationItems,
+        String property, Method method) {
         Optional<ConfigurationItem> correspondingConfigItem = configurationItems.stream()
             .filter(configurationItem -> configurationItem.getName().equals(property))
             .findFirst();
@@ -57,12 +60,10 @@ public class ObjectMapper {
         if (!correspondingConfigItem.isPresent()) {
             if (!ConfigurationSection.class.isAssignableFrom(setterArgumentType)) {
                 return null;
-            }
-            else {
+            } else {
                 if (configValue == null) {
                     return mapTo((Class<ConfigurationSection>) setterArgumentType, Collections.emptyMap());
-                }
-                else {
+                } else {
                     return mapTo((Class<ConfigurationSection>) setterArgumentType, (Map<String, Object>) configValue);
                 }
             }
@@ -73,22 +74,53 @@ public class ObjectMapper {
                 mappedValue = configurationItem.getDefaultValue();
             }
             if (mappedValue != null) {
-                return convert(mappedValue, setterArgumentType);
+                return convert(mappedValue, method);
             }
         }
         return null;
     }
 
     @SuppressWarnings("unchecked")
-    private static Object convert(Object mappedValue, Class<?> setterArgumentType) {
+    private static Object convert(Object mappedValue, Method method) {
+        Class<?> setterArgumentType = method.getParameterTypes()[0];
         if (setterArgumentType.isArray()) {
             return handleArray(mappedValue, setterArgumentType.getComponentType());
-        }
-        else if (ConfigurationSection.class.isAssignableFrom(setterArgumentType)) {
+        } else if (List.class.isAssignableFrom(setterArgumentType)) {
+            return handleList(mappedValue, method);
+        } else if (setterArgumentType.isEnum()) {
+            return handleEnum(mappedValue, setterArgumentType);
+        } else if (setterArgumentType.isAssignableFrom(mappedValue.getClass())) {
+            return mappedValue;
+        } else if (ConfigurationSection.class.isAssignableFrom(setterArgumentType)) {
             return mapTo((Class<ConfigurationSection>) setterArgumentType, (Map<String, Object>) mappedValue);
         } else {
             return convertToType(setterArgumentType, mappedValue.toString());
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Object handleList(Object mappedValue, Method method) {
+        Type[] genericParameterTypes = method.getGenericParameterTypes();
+        if (genericParameterTypes.length == 1) {
+            Type type = genericParameterTypes[0];
+
+            if (type instanceof ParameterizedType) {
+                Type[] parameters = ((ParameterizedType) type).getActualTypeArguments();
+                if (parameters.length == 1) {
+                    return getConvertedList((Class<Object>) parameters[0], mappedValue);
+                }
+            }
+        }
+        return null;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Enum handleEnum(Object mappedValue, Class<?> setterArgumentType) {
+        if (mappedValue.getClass().isEnum()) {
+            return (Enum) mappedValue;
+        }
+        String value = (String) mappedValue;
+        return Enum.valueOf((Class<Enum>) setterArgumentType, value.toUpperCase());
     }
 
     @SuppressWarnings("unchecked")
@@ -132,6 +164,8 @@ public class ObjectMapper {
             return Boolean.valueOf(mappedValue);
         } else if (String.class.equals(clazz)) {
             return mappedValue;
+        } else if (clazz.isEnum()) {
+            return handleEnum(mappedValue, clazz);
         }
         return null;
     }
