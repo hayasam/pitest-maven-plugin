@@ -11,6 +11,7 @@ public enum PITestConfigurationItems {
     MUTATORS(new ConfigurationItem("mutators", "pitest.mutators", Constants.EMPTY_ARRAY)),
     EXCLUDED_METHODS(new ConfigurationItem("excludedMethods","pitest.excluded.methods", Constants.EMPTY_ARRAY)),
     EXCLUDED_CLASSES(new ConfigurationItem("excludedClasses","pitest.excluded.classes", Constants.EMPTY_ARRAY)),
+    EXCLUDED_TEST_CLASSES(new ConfigurationItem("excludedTestClasses","pitest.excludedTestClasses", Constants.EMPTY_ARRAY)),
     EXCLUDED_TESTS(new ConfigurationItem("excludedTests","pitest.excluded.tests", Constants.EMPTY_ARRAY)),
     AVOID_CALLS_TO(new ConfigurationItem("avoidCallsTo","pitest.avoid.calls.to", Constants.EMPTY_ARRAY)),
     VERBOSE(new ConfigurationItem("verbose","pitest.verbose",false)),
@@ -29,7 +30,10 @@ public enum PITestConfigurationItems {
     DETECT_INLINED_CODE(new ConfigurationItem("detectInlinedCode","pitest.detect.inlined.code", false)),
     TIMESTAMPED_REPORTS(new ConfigurationItem("timestampedReports","pitest.timestamped.reports", true)),
     MUTATION_THRESHOLD(new ConfigurationItem("mutationThreshold", "pitest.mutation.threshold", 0)),
-    COVERAGE_THRESHOLD(new ConfigurationItem("coverageThreshold", "pitest.coverage.threshold", 0));
+    COVERAGE_THRESHOLD(new ConfigurationItem("coverageThreshold", "pitest.coverage.threshold", 0)),
+    EXPORT_LINE_COVERAGE(new ConfigurationItem("exportLineCoverage","pitest.exportLineCoverage",false)),
+    EXCLUDED_RUNNERS(new ConfigurationItem("excludedRunners","pitest.excludedRunners",Constants.EMPTY_ARRAY)),
+    MUTATION_ENGINE(new ConfigurationItem("mutationEngine", "pitest.mutationEngine","gregor"));
 
     private static class Constants {
         static final String[] EMPTY_ARRAY = new String[0];

@@ -111,6 +111,7 @@ public class ObjectMapperTest {
         ScmConfiguration scmConfiguration = new ScmConfiguration();
         scmConfiguration.setRange("HEAD~2");
         scmConfiguration.setInclude(new String[] {"Hello"});
+        scmConfiguration.setConnectionType("connection");
         Assert.assertEquals(piTestConfiguration.getScm(), scmConfiguration);
     }
 

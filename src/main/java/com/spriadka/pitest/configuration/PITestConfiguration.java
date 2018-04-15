@@ -39,6 +39,21 @@ public class PITestConfiguration implements ConfigurationSection {
     private int mutationThreshold;
     private int coverageThreshold;
 
+    private boolean exportLineCoverage;
+
+    private String mutationEngine;
+    private String[] excludedRunners;
+
+    public String[] getExcludedTestClasses() {
+        return excludedTestClasses;
+    }
+
+    public void setExcludedTestClasses(String[] excludedTestClasses) {
+        this.excludedTestClasses = excludedTestClasses;
+    }
+
+    private String[] excludedTestClasses;
+
     private ScmConfiguration scm;
     private IncrementalAnalysisConfiguration incremental;
 
@@ -288,5 +303,29 @@ public class PITestConfiguration implements ConfigurationSection {
     public void setIncremental(
         IncrementalAnalysisConfiguration incremental) {
         this.incremental = incremental;
+    }
+
+    public boolean isExportLineCoverage() {
+        return exportLineCoverage;
+    }
+
+    public void setExportLineCoverage(boolean exportLineCoverage) {
+        this.exportLineCoverage = exportLineCoverage;
+    }
+
+    public String getMutationEngine() {
+        return mutationEngine;
+    }
+
+    public void setMutationEngine(String mutationEngine) {
+        this.mutationEngine = mutationEngine;
+    }
+
+    public String[] getExcludedRunners() {
+        return excludedRunners;
+    }
+
+    public void setExcludedRunners(String[] excludedRunners) {
+        this.excludedRunners = excludedRunners;
     }
 }
