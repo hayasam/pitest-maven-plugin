@@ -178,8 +178,4 @@ public class ObjectMapper {
         }
         return configValue;
     }
-
-    private static class PropertyConverter<TO> {
-
-    }
 }

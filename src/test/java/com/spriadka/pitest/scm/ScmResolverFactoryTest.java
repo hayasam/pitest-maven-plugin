@@ -1,11 +1,6 @@
-package com.spriadka.pitest.configuration;
+package com.spriadka.pitest.scm;
 
-import com.spriadka.pitest.scm.HeadScmResolver;
-import com.spriadka.pitest.scm.LocalChangesScmResolver;
-import com.spriadka.pitest.scm.ScmResolver;
-import com.spriadka.pitest.scm.ScmResolverFactory;
-import com.spriadka.pitest.scm.VersionScmResolver;
-import edu.emory.mathcs.backport.java.util.Collections;
+import java.util.Collections;
 import java.io.File;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.scm.manager.ScmManager;

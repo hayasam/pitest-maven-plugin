@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.scm.ScmException;
@@ -19,6 +20,11 @@ public class LocalChangesScmResolver extends AbstractScmResolver {
     public LocalChangesScmResolver(File scmRoot, ScmManager scmManager, ScmRepository scmRepository,
         Log log, Collection<ScmFileStatus> fileStatuses) {
         super(scmRoot, scmManager, scmRepository, log, fileStatuses);
+    }
+
+    public LocalChangesScmResolver(File scmRoot, ScmManager scmManager, ScmRepository scmRepository,
+        Log log, Collection<ScmFileStatus> fileStatuses, Function<String,String> transformer) {
+        super(scmRoot, scmManager, scmRepository, log, fileStatuses, transformer);
     }
 
     @Override

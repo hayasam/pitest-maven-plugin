@@ -1,5 +1,7 @@
 package com.spriadka.pitest.configuration;
 
+import java.util.Collections;
+
 public enum PITestConfigurationItems {
 
     INCLUDE_LAUNCH_CLASSPATH(new ConfigurationItem("includeLaunchClasspath","pitest.include.launch.classpath",false)),
@@ -33,8 +35,12 @@ public enum PITestConfigurationItems {
     COVERAGE_THRESHOLD(new ConfigurationItem("coverageThreshold", "pitest.coverage.threshold", 0)),
     EXPORT_LINE_COVERAGE(new ConfigurationItem("exportLineCoverage","pitest.exportLineCoverage",false)),
     EXCLUDED_RUNNERS(new ConfigurationItem("excludedRunners","pitest.excludedRunners",Constants.EMPTY_ARRAY)),
-    MUTATION_ENGINE(new ConfigurationItem("mutationEngine", "pitest.mutationEngine","gregor"));
-
+    MUTATION_ENGINE(new ConfigurationItem("mutationEngine", "pitest.mutationEngine","gregor")),
+    MAX_SURVIVING(new ConfigurationItem("maxSurviving","pitest.max.surviving",-1)),
+    ENVIRONMENT_VARIABLES(new ConfigurationItem("environmentVariables", "pitest.environment.variables", Collections.emptyMap())),
+    REPORTS_DIRECTORY(new ConfigurationItem("reportsDirectory","pitest.reports.directory","")),
+    ADDITIONAL_CLASSPATH_ELEMENTS(new ConfigurationItem("additionalClasspathElements","pitest.additional.classpath.elements",Constants.EMPTY_ARRAY)),
+    CLASSPATH_DEPENDENCY_EXCLUDES(new ConfigurationItem("classpathDependencyExcludes", "pitest.classpath.dependency.excludes",Constants.EMPTY_ARRAY));
     private static class Constants {
         static final String[] EMPTY_ARRAY = new String[0];
         static final String[] OUTPUT_FORMATS_DEFAULT = new String[] {"HTML"};

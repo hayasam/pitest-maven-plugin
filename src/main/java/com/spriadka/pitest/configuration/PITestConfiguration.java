@@ -3,6 +3,7 @@ package com.spriadka.pitest.configuration;
 import com.spriadka.pitest.configuration.incremental.IncrementalAnalysisConfiguration;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class PITestConfiguration implements ConfigurationSection {
@@ -43,6 +44,21 @@ public class PITestConfiguration implements ConfigurationSection {
 
     private String mutationEngine;
     private String[] excludedRunners;
+
+    private Map<String, String> environmentVariables;
+    private String reportsDirectory;
+    private String[] additionalClasspathElements;
+    private String[] classpathDependencyExcludes;
+
+    public int getMaxSurviving() {
+        return maxSurviving;
+    }
+
+    public void setMaxSurviving(int maxSurviving) {
+        this.maxSurviving = maxSurviving;
+    }
+
+    private int maxSurviving;
 
     public String[] getExcludedTestClasses() {
         return excludedTestClasses;
@@ -327,5 +343,37 @@ public class PITestConfiguration implements ConfigurationSection {
 
     public void setExcludedRunners(String[] excludedRunners) {
         this.excludedRunners = excludedRunners;
+    }
+
+    public Map<String, String> getEnvironmentVariables() {
+        return environmentVariables;
+    }
+
+    public void setEnvironmentVariables(Map<String, String> environmentVariables) {
+        this.environmentVariables = environmentVariables;
+    }
+
+    public String getReportsDirectory() {
+        return reportsDirectory;
+    }
+
+    public void setReportsDirectory(String reportsDirectory) {
+        this.reportsDirectory = reportsDirectory;
+    }
+
+    public String[] getAdditionalClasspathElements() {
+        return additionalClasspathElements;
+    }
+
+    public void setAdditionalClasspathElements(String[] additionalClasspathElements) {
+        this.additionalClasspathElements = additionalClasspathElements;
+    }
+
+    public String[] getClasspathDependencyExcludes() {
+        return classpathDependencyExcludes;
+    }
+
+    public void setClasspathDependencyExcludes(String[] classpathDependencyExcludes) {
+        this.classpathDependencyExcludes = classpathDependencyExcludes;
     }
 }

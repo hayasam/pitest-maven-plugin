@@ -4,71 +4,114 @@ import com.spriadka.pitest.configuration.PITestConfiguration;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.plugin.logging.Log;
-import org.apache.maven.project.MavenProject;
 import org.pitest.mutationtest.config.ReportOptions;
 import org.pitest.testapi.TestGroupConfig;
 import org.pitest.util.Glob;
 
 public class ConfigurationToReportOptionsConverter {
 
-    private PITestConfiguration piTestConfiguration;
-    private MavenProject mavenProject;
-    private Log log;
-    private Predicate<Artifact> dependencyFilter;
+    private final PITestConfiguration piTestConfiguration;
+    private final AbstractPITMojo mojo;
 
-    public ReportOptions convert() {
+    public ConfigurationToReportOptionsConverter(AbstractPITMojo mojo, PITestConfiguration configuration) {
+        this.mojo = mojo;
+        this.piTestConfiguration = configuration;
+    }
+
+    public ReportOptions createReportOptions() {
 
         List<String> classPath = new ArrayList<>();
         try {
-            classPath.addAll(mavenProject.getTestClasspathElements());
+            classPath.addAll(this.mojo.getProject().getTestClasspathElements());
         } catch (DependencyResolutionRequiredException e) {
-            log.info(e);
+            this.mojo.getLog().info(e);
         }
-
+        addOwnDependenciesToClassPath(classPath);
+        classPath.addAll(Arrays.asList(piTestConfiguration.getAdditionalClasspathElements()));
+        for (Object artifact : this.mojo.getProject().getArtifacts()) {
+            final Artifact dependency = (Artifact) artifact;
+            if (Arrays.asList(piTestConfiguration.getClasspathDependencyExcludes()).contains(
+                dependency.getGroupId() + ":" + dependency.getArtifactId())) {
+                classPath.remove(dependency.getFile().getPath());
+            }
+        }
         ReportOptions reportOptions = new ReportOptions();
+        reportOptions.setCodePaths(Collections.singleton(this.mojo.getProject().getBuild().getOutputDirectory()));
         reportOptions.setTestPlugin(piTestConfiguration.getTestPlugin());
+        reportOptions.setClassPathElements(classPath);
         reportOptions.setDependencyAnalysisMaxDistance(piTestConfiguration.getDependencyDistance());
-        reportOptions.setIncludeLaunchClasspath(piTestConfiguration.isIncludeLaunchClasspath());
-        reportOptions.setTargetTests(Glob.toGlobPredicates(Arrays.asList(piTestConfiguration.getTargetTests())));
+        reportOptions.setFailWhenNoMutations(piTestConfiguration.isFailWhenNoMutations());
+
         reportOptions.setTargetClasses(Arrays.asList(piTestConfiguration.getTargetClasses()));
-        reportOptions.setNumberOfThreads(piTestConfiguration.getThreads());
-        reportOptions.setDependencyAnalysisMaxDistance(piTestConfiguration.getDependencyDistance());
-        reportOptions.setMutators(Arrays.asList(piTestConfiguration.getMutators()));
+        reportOptions.setTargetTests(Glob.toGlobPredicates(Arrays.asList(piTestConfiguration.getTargetTests())));
+
         reportOptions.setExcludedClasses(Arrays.asList(piTestConfiguration.getExcludedClasses()));
-        reportOptions.setExcludedTestClasses(Glob.toGlobPredicates(Arrays.asList(piTestConfiguration.getExcludedTestClasses())));
+        reportOptions.setExcludedTestClasses(
+            Glob.toGlobPredicates(Arrays.asList(piTestConfiguration.getExcludedTestClasses())));
         reportOptions.setExcludedMethods(Arrays.asList(piTestConfiguration.getExcludedMethods()));
+        reportOptions.setNumberOfThreads(piTestConfiguration.getThreads());
+        reportOptions.setExcludedRunners(Arrays.asList(piTestConfiguration.getExcludedRunners()));
+
+        setReportDir(reportOptions,piTestConfiguration);
         reportOptions.setVerbose(piTestConfiguration.isVerbose());
+
+        reportOptions.addChildJVMArgs(Arrays.asList(piTestConfiguration.getJvmArgs()));
+        reportOptions.setMutators(Arrays.asList(piTestConfiguration.getMutators()));
         reportOptions.setTimeoutConstant(piTestConfiguration.getTimeoutConst());
         reportOptions.setTimeoutFactor(piTestConfiguration.getTimeoutFactor());
-        reportOptions.setJavaExecutable(piTestConfiguration.getJvmPath());
-        reportOptions.setFailWhenNoMutations(piTestConfiguration.isFailWhenNoMutations());
-        reportOptions.setTestPlugin(piTestConfiguration.getTestPlugin());
-        reportOptions.setGroupConfig(new TestGroupConfig(Arrays.asList(piTestConfiguration.getExcludedGroups()),
-            Arrays.asList(piTestConfiguration.getIncludedGroups())));
+
+        setSourceRoots(reportOptions);
+        reportOptions.addOutputFormats(Arrays.asList(piTestConfiguration.getOutputFormats()));
 
         reportOptions.setShouldCreateTimestampedReports(piTestConfiguration.isTimestampedReports());
         reportOptions.setMutationUnitSize(piTestConfiguration.getMaxMutationsPerClass());
-        reportOptions.setExportLineCoverage(piTestConfiguration.isExportLineCoverage());
-        reportOptions.addChildJVMArgs(Arrays.asList(piTestConfiguration.getJvmArgs()));
-        reportOptions.addOutputFormats(Arrays.asList(piTestConfiguration.getOutputFormats()));
-        reportOptions.setMutationEngine(piTestConfiguration.getMutationEngine());
-        reportOptions.setExcludedRunners(Arrays.asList(piTestConfiguration.getExcludedRunners()));
         reportOptions.setDetectInlinedCode(piTestConfiguration.isDetectInlinedCode());
-        setSourceRoots(reportOptions);
+
+        reportOptions.setExportLineCoverage(piTestConfiguration.isExportLineCoverage());
+        reportOptions.setMutationEngine(piTestConfiguration.getMutationEngine());
+        reportOptions.setJavaExecutable(piTestConfiguration.getJvmPath());
+
+
+        reportOptions.setGroupConfig(new TestGroupConfig(Arrays.asList(piTestConfiguration.getExcludedGroups()),
+            Arrays.asList(piTestConfiguration.getIncludedGroups())));
 
         return reportOptions;
     }
 
+    private void setReportDir(ReportOptions reportOptions, PITestConfiguration piTestConfiguration) {
+        if (!piTestConfiguration.getReportsDirectory().isEmpty()) {
+            File path = new File(piTestConfiguration.getReportsDirectory());
+            reportOptions.setReportDir(path.getAbsolutePath());
+        } else {
+            reportOptions.setReportDir(this.mojo.getProject().getBasedir().getAbsolutePath() + "pit-reports");
+        }
+    }
+
+    private void addOwnDependenciesToClassPath(final List<String> classPath) {
+        this.mojo.getArtifactMap().forEach((key,value) -> this.mojo.getLog().info("Found Artifact: " + value));
+        for (final Artifact dependency : filteredDependencies()) {
+            this.mojo.getLog().info("Adding " + dependency.getGroupId() + ":"
+                + dependency.getArtifactId() + " to SUT classpath");
+            classPath.add(dependency.getFile().getAbsolutePath());
+        }
+    }
+
+    private Collection<Artifact> filteredDependencies() {
+        return this.mojo.getArtifactMap().values().stream().filter(this.mojo.getDependencyFilter()).collect(Collectors.toList());
+    }
+
+    @SuppressWarnings("unchecked")
     private void setSourceRoots(ReportOptions reportOptions) {
         List<String> sourceRoots = new ArrayList<>();
-        sourceRoots.addAll(mavenProject.getCompileSourceRoots());
-        sourceRoots.addAll(mavenProject.getTestCompileSourceRoots());
+        sourceRoots.addAll(this.mojo.getProject().getCompileSourceRoots());
+        sourceRoots.addAll(this.mojo.getProject().getTestCompileSourceRoots());
         List<File> rootsAsFiles = sourceRoots.stream()
             .map(File::new)
             .collect(Collectors.toList());

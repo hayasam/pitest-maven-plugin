@@ -1,6 +1,6 @@
 package com.spriadka.pitest.scm;
 
-import edu.emory.mathcs.backport.java.util.Collections;
+import java.util.Collections;
 import java.io.File;
 import java.util.Collection;
 import java.util.List;
