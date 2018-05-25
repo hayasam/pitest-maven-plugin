@@ -14,7 +14,7 @@ public class IncrementalAnalysisConfiguration implements ConfigurationSection {
     @Override
     public List<ConfigurationItem> registerConfigurationItems() {
         return Arrays.asList(new ConfigurationItem("historyInputLocation", "pitest.incremental.history.input.location",""),
-            new ConfigurationItem("historyOutputLocation", "pitest.history.output.location",""));
+            new ConfigurationItem("historyOutputLocation", "pitest.incremental.history.output.location",""));
     }
 
     public File getHistoryInputLocation() {

@@ -22,13 +22,8 @@ public class LocalChangesScmResolver extends AbstractScmResolver {
         super(scmRoot, scmManager, scmRepository, log, fileStatuses);
     }
 
-    public LocalChangesScmResolver(File scmRoot, ScmManager scmManager, ScmRepository scmRepository,
-        Log log, Collection<ScmFileStatus> fileStatuses, Function<String,String> transformer) {
-        super(scmRoot, scmManager, scmRepository, log, fileStatuses, transformer);
-    }
-
     @Override
-    protected List<String> getAffectedFiles() {
+    public List<String> resolveTargetClasses() {
         try {
             StatusScmResult result = scmManager.status(scmRepository, new ScmFileSet(scmRoot));
             return result.getChangedFiles()

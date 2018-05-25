@@ -2,13 +2,14 @@ package com.spriadka.pitest;
 
 import com.spriadka.pitest.configuration.PITestConfiguration;
 import com.spriadka.pitest.configuration.ScmConfiguration;
+import com.spriadka.pitest.scm.PathToJavaClassConverter;
 import com.spriadka.pitest.scm.ScmResolver;
 import com.spriadka.pitest.scm.ScmResolverFactory;
+import java.io.File;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Component;
@@ -33,9 +34,16 @@ public class ScmPitMojo extends AbstractPITMojo {
     private ScmManager scmManager;
 
     @Override
-    protected CombinedStatistics analyse(PITestConfiguration configuration)
+    protected Optional<CombinedStatistics> analyse(PITestConfiguration configuration)
         throws MojoExecutionException {
-        resolveTargetClasses(configuration);
+        List<String> modifiedTargetClasses = fetchModifiedTargetClasses(configuration);
+        if (modifiedTargetClasses.isEmpty()) {
+            getLog().info("PITest did not found any target classes, skipping execution");
+            return Optional.empty();
+        }
+        String[] targetClasses = new String[modifiedTargetClasses.size()];
+        modifiedTargetClasses.toArray(targetClasses);
+        configuration.setTargetClasses(targetClasses);
         EntryPoint entryPoint = new EntryPoint();
         ReportOptions reportOptions =
             new ConfigurationToReportOptionsConverter(this, configuration).createReportOptions();
@@ -44,10 +52,10 @@ public class ScmPitMojo extends AbstractPITMojo {
         if (result.getError().hasSome()) {
             throw new MojoExecutionException("Mutation execution has failed", result.getError().value());
         }
-        return result.getStatistics().value();
+        return Optional.of(result.getStatistics().value());
     }
 
-    private void resolveTargetClasses(PITestConfiguration configuration)
+    private List<String> fetchModifiedTargetClasses(PITestConfiguration configuration)
         throws MojoExecutionException {
         ScmConfiguration scmConfiguration = configuration.getScm();
         ScmRepository repository;
@@ -62,9 +70,12 @@ public class ScmPitMojo extends AbstractPITMojo {
             .collect(Collectors.toList());
         ScmResolver resolver = new ScmResolverFactory(project.getBasedir(), repository, scmManager, getLog(), includingFileStatus)
             .fromRange(scmConfiguration.getRange());
-        List<String> modifiedTargetClasses = resolver.resolveTargetClasses();
-        String[] targetClasses = new String[modifiedTargetClasses.size()];
-        configuration.setTargetClasses(modifiedTargetClasses.toArray(targetClasses));
+        File sourceRoot = new File(project.getBuild().getSourceDirectory());
+        return resolver.resolveTargetClasses().stream()
+            .map(new PathToJavaClassConverter(sourceRoot.getAbsolutePath()))
+            .filter(string -> !string.isEmpty())
+            .distinct()
+            .collect(Collectors.toList());
     }
 
     private String getConnection(ScmConfiguration scmConfiguration) throws MojoExecutionException {

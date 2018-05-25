@@ -19,32 +19,12 @@ public abstract class AbstractScmResolver implements ScmResolver {
     protected final List<ScmFileStatus> fileStatuses;
     protected final Log log;
 
-    private final Function<String, String> pathToJavaClassConverter;
-
     public AbstractScmResolver(File scmRoot, ScmManager scmManager, ScmRepository scmRepository, Log log,
-        Collection<ScmFileStatus> statuses, Function<String, String> pathToJavaClassConverter) {
+        Collection<ScmFileStatus> statuses) {
         this.scmRoot = scmRoot;
         this.scmManager = scmManager;
         this.scmRepository = scmRepository;
         this.log = log;
         this.fileStatuses = new ArrayList<>(statuses);
-        this.pathToJavaClassConverter = pathToJavaClassConverter;
     }
-
-    public AbstractScmResolver(File scmRoot, ScmManager scmManager, ScmRepository scmRepository,
-        Log log, Collection<ScmFileStatus> fileStatuses) {
-        this(scmRoot, scmManager, scmRepository, log, fileStatuses,
-            new PathToJavaClassConverter(scmRoot.getAbsolutePath()));
-    }
-
-    @Override
-    public List<String> resolveTargetClasses() {
-        List<String> modifiedFileNames = new ArrayList<>(getAffectedFiles());
-        return modifiedFileNames.stream()
-            .map(pathToJavaClassConverter)
-            .filter(javaClass -> !javaClass.isEmpty())
-            .collect(Collectors.toList());
-    }
-
-    protected abstract List<String> getAffectedFiles();
 }

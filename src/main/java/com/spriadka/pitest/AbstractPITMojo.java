@@ -72,7 +72,7 @@ public abstract class AbstractPITMojo extends AbstractMojo {
         }
         logPluginServices();
         PITestConfiguration configuration = ConfigurationLoader.load(project.getBasedir());
-        Optional<CombinedStatistics> result = Optional.of(analyse(configuration));
+        Optional<CombinedStatistics> result = analyse(configuration);
         if (result.isPresent()) {
             throwErrorIfScoreBelowThreshold(result.get().getMutationStatistics(), configuration);
             throwErrorIfMoreThanMaximumSurvivors(result.get().getMutationStatistics(), configuration);
@@ -93,7 +93,7 @@ public abstract class AbstractPITMojo extends AbstractMojo {
 
     }
 
-    protected CombinedStatistics analyse(PITestConfiguration configuration)
+    protected Optional<CombinedStatistics> analyse(PITestConfiguration configuration)
         throws MojoExecutionException {
         EntryPoint entryPoint = new EntryPoint();
         ReportOptions reportOptions =
@@ -103,7 +103,7 @@ public abstract class AbstractPITMojo extends AbstractMojo {
         if (result.getError().hasSome()) {
             throw new MojoExecutionException("Mutation execution has failed", result.getError().value());
         }
-        return result.getStatistics().value();
+        return Optional.of(result.getStatistics().value());
     }
 
     private RunDecision shouldRun() {

@@ -30,7 +30,7 @@ public class HeadScmResolver extends AbstractScmResolver {
     private int numberOfCommits;
 
     @Override
-    protected List<String> getAffectedFiles() {
+    public List<String> resolveTargetClasses() {
         try {
             ChangeLogScmRequest request = new ChangeLogScmRequest(scmRepository, new ScmFileSet(scmRoot));
             request.setLimit(numberOfCommits);
@@ -41,6 +41,7 @@ public class HeadScmResolver extends AbstractScmResolver {
             }
             return result.getChangeLog()
                 .getChangeSets()
+                .subList(0, numberOfCommits)
                 .stream()
                 .flatMap(set -> set.getFiles().stream())
                 .filter(file -> fileStatuses.contains(file.getAction()))

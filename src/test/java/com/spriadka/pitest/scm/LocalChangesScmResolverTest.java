@@ -52,7 +52,7 @@ public class LocalChangesScmResolverTest {
         Mockito.when(manager.status(any(ScmRepository.class), any(ScmFileSet.class)))
             .thenReturn(new StatusScmResult(scmFiles, scmResult));
 
-        Assert.assertEquals(Arrays.asList("Hello", "World"), resolver.getAffectedFiles());
+        Assert.assertEquals(Arrays.asList("Hello", "World"), resolver.resolveTargetClasses());
     }
 
     @Test
@@ -65,18 +65,18 @@ public class LocalChangesScmResolverTest {
         Mockito.when(manager.status(any(ScmRepository.class), any(ScmFileSet.class)))
             .thenReturn(new StatusScmResult(scmFiles, scmResult));
 
-        Assert.assertEquals(Collections.emptyList(), resolver.getAffectedFiles());
+        Assert.assertEquals(Collections.emptyList(), resolver.resolveTargetClasses());
     }
 
     @Test
     public void should_return_empty_when_error_occurs() throws IOException, ScmException {
         resolver = createResolverInstance(Collections.emptyList());
         Mockito.when(manager.status(any(ScmRepository.class), any(ScmFileSet.class))).thenThrow(ScmException.class);
-        Assert.assertEquals(Collections.emptyList(), resolver.getAffectedFiles());
+        Assert.assertEquals(Collections.emptyList(), resolver.resolveTargetClasses());
     }
 
     private LocalChangesScmResolver createResolverInstance(Collection<ScmFileStatus> statuses) throws IOException {
         return new LocalChangesScmResolver(File.createTempFile("prefix-", "-suffix", temporaryScmRoot.getRoot()), manager,
-            null, log, statuses, Function.identity());
+            null, log, statuses);
     }
 }

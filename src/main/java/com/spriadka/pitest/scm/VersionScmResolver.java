@@ -29,7 +29,7 @@ public class VersionScmResolver extends AbstractScmResolver {
     }
 
     @Override
-    protected List<String> getAffectedFiles() {
+    public List<String> resolveTargetClasses() {
         ChangeLogScmResult changeLogScmResult = null;
         try {
             changeLogScmResult = executeCommitChangelog(revision);
