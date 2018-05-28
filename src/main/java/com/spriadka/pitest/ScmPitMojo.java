@@ -11,11 +11,13 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.apache.maven.model.Scm;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.ResolutionScope;
+import org.apache.maven.project.MavenProject;
 import org.apache.maven.scm.ScmFileStatus;
 import org.apache.maven.scm.manager.NoSuchScmProviderException;
 import org.apache.maven.scm.manager.ScmManager;
@@ -68,10 +70,15 @@ public class ScmPitMojo extends AbstractPITMojo {
             .filter(scmStatus -> matchesStatus(scmStatus, scmConfiguration.getInclude()))
             .map(ScmStatus::getStatus)
             .collect(Collectors.toList());
-        ScmResolver resolver = new ScmResolverFactory(project.getBasedir(), repository, scmManager, getLog(), includingFileStatus)
+        File scmRoot = getScmRoot();
+        ScmResolver resolver = new ScmResolverFactory(scmRoot, repository, scmManager, getLog(), includingFileStatus)
             .fromRange(scmConfiguration.getRange());
         File sourceRoot = new File(project.getBuild().getSourceDirectory());
         return resolver.resolveTargetClasses().stream()
+            .map(modifiedFileName -> {
+                String result = scmRoot + "/" + modifiedFileName;
+                return result;
+            })
             .map(new PathToJavaClassConverter(sourceRoot.getAbsolutePath()))
             .filter(string -> !string.isEmpty())
             .distinct()
@@ -91,6 +98,22 @@ public class ScmPitMojo extends AbstractPITMojo {
             return developerConnection;
         }
         throw new MojoExecutionException("SCM connection is not set");
+    }
+
+    private File getScmRoot() {
+        MavenProject rootProject = project;
+        while (rootProject.hasParent() && rootProject.getParent().getBasedir() != null) {
+            rootProject = rootProject.getParent();
+        }
+        return rootProject.getBasedir();
+    }
+
+    private File getScmRootDir(ScmConfiguration scmConfiguration) {
+        String rootPath = scmConfiguration.getRoot();
+        if (rootPath != null && !rootPath.isEmpty()) {
+            return new File(rootPath);
+        }
+        return project.getBasedir();
     }
 
     private boolean matchesStatus(ScmStatus scmStatus, String... stringStatuses) {

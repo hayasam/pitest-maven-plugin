@@ -1,6 +1,7 @@
 package com.spriadka.pitest;
 
 import com.spriadka.pitest.configuration.PITestConfiguration;
+import com.spriadka.pitest.configuration.incremental.IncrementalAnalysisConfiguration;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -14,6 +15,7 @@ import java.util.stream.Collectors;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.plugin.logging.Log;
+import org.apache.maven.project.MavenProject;
 import org.pitest.classinfo.ClassName;
 import org.pitest.classpath.DirectoryClassPathRoot;
 import org.pitest.mutationtest.config.ReportOptions;
@@ -86,7 +88,44 @@ public class ConfigurationToReportOptionsConverter {
         reportOptions.setGroupConfig(new TestGroupConfig(Arrays.asList(piTestConfiguration.getExcludedGroups()),
             Arrays.asList(piTestConfiguration.getIncludedGroups())));
 
+        setIncremental(reportOptions);
+
         return reportOptions;
+    }
+
+    private void setIncremental(ReportOptions reportOptions) {
+        IncrementalAnalysisConfiguration incrementalAnalysisConfiguration = piTestConfiguration.getIncremental();
+        if (incrementalAnalysisConfiguration.isEnableDefault()) {
+            setIncrementalDefault(reportOptions);
+        } else {
+            String historyInputFilePath = incrementalAnalysisConfiguration.getHistoryInputLocation();
+            String historyOutputFilePath = incrementalAnalysisConfiguration.getHistoryOutputLocation();
+            if (historyInputFilePath != null && !historyInputFilePath.isEmpty()) {
+                reportOptions.setHistoryInputLocation(new File(historyInputFilePath));
+            }
+            if (historyOutputFilePath != null && !historyOutputFilePath.isEmpty()) {
+                reportOptions.setHistoryOutputLocation(new File(historyOutputFilePath));
+            }
+        }
+    }
+
+    private void setIncrementalDefault(ReportOptions reportOptions) {
+        String tempDir = System.getProperty("java.io.tmpdir");
+        MavenProject project = this.mojo.project;
+        String name = project.getGroupId() + "."
+            + project.getArtifactId() + "."
+            + project.getVersion() + "_pitest_history.bin";
+        File historyFile = new File(tempDir, name);
+        this.mojo.getLog().info("Will read and write history at " + historyFile);
+        IncrementalAnalysisConfiguration incrementalAnalysisConfiguration = piTestConfiguration.getIncremental();
+        if (incrementalAnalysisConfiguration.getHistoryInputLocation() == null
+            || incrementalAnalysisConfiguration.getHistoryInputLocation().isEmpty()) {
+            reportOptions.setHistoryInputLocation(historyFile);
+        }
+        if (incrementalAnalysisConfiguration.getHistoryOutputLocation() == null
+            || incrementalAnalysisConfiguration.getHistoryOutputLocation().isEmpty()) {
+            reportOptions.setHistoryInputLocation(historyFile);
+        }
     }
 
     private Collection<String> determineTargetClasses() {

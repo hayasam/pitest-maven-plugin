@@ -8,28 +8,38 @@ import java.util.List;
 
 public class IncrementalAnalysisConfiguration implements ConfigurationSection {
 
-    private File historyInputLocation;
-    private File historyOutputLocation;
+    private String historyInputLocation;
+    private String historyOutputLocation;
+    private boolean enableDefault;
 
     @Override
     public List<ConfigurationItem> registerConfigurationItems() {
-        return Arrays.asList(new ConfigurationItem("historyInputLocation", "pitest.incremental.history.input.location",""),
-            new ConfigurationItem("historyOutputLocation", "pitest.incremental.history.output.location",""));
+        return Arrays.asList(new ConfigurationItem("historyInputLocation", "pitest.incremental.history.input.location",null),
+            new ConfigurationItem("historyOutputLocation", "pitest.incremental.history.output.location",null),
+            new ConfigurationItem("enableDefault", "pitest.incremental.enable.default", false));
     }
 
-    public File getHistoryInputLocation() {
+    public String getHistoryInputLocation() {
         return historyInputLocation;
     }
 
-    public File getHistoryOutputLocation() {
+    public String getHistoryOutputLocation() {
         return historyOutputLocation;
     }
 
     public void setHistoryInputLocation(String filePath) {
-        this.historyInputLocation = new File(filePath);
+        this.historyInputLocation = filePath;
     }
 
     public void setHistoryOutputLocation(String filePath) {
-        this.historyOutputLocation = new File(filePath);
+        this.historyOutputLocation = filePath;
+    }
+
+    public boolean isEnableDefault() {
+        return enableDefault;
+    }
+
+    public void setEnableDefault(boolean enableDefault) {
+        this.enableDefault = enableDefault;
     }
 }

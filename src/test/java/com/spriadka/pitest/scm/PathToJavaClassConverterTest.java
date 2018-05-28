@@ -1,8 +1,10 @@
 package com.spriadka.pitest.scm;
 
 import java.io.File;
+import org.apache.maven.plugin.logging.Log;
 import org.junit.Assert;
 import org.junit.Test;
+import org.mockito.Mock;
 
 public class PathToJavaClassConverterTest {
 

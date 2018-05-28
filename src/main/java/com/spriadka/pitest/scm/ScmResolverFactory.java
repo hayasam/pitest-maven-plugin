@@ -4,6 +4,8 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
+import java.util.regex.Pattern;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.scm.ScmFileStatus;
 import org.apache.maven.scm.manager.ScmManager;
@@ -33,10 +35,10 @@ public class ScmResolverFactory {
         resolverEntries.add(new LastTwoCommitsPatternScmResolver());
         resolverEntries.add(new HeadPatternScmResolver());
         resolverEntries.add(new RevisionPatternScmResolver());
-        return resolverEntries.stream().filter(resolver -> resolver.matches(range))
+        Optional<ScmResolver> result = resolverEntries.stream().filter(resolver -> resolver.matches(range))
             .findFirst()
-            .map(resolverEntry -> resolverEntry.getResolver(range))
-            .orElse(new LocalChangesPatternScmResolver().getResolver(range));
+            .map(resolverEntry -> resolverEntry.getResolver(range));
+        return result.orElseGet(() -> new LocalChangesScmResolver(scmRoot, manager, repository, log, statuses));
     }
 
     private abstract class AbstractPatternScmResolverEntry {
@@ -49,7 +51,7 @@ public class ScmResolverFactory {
 
         abstract ScmResolver getResolver(String value);
         boolean matches(String value) {
-            return value.trim().matches(pattern);
+            return Pattern.compile(pattern).matcher(value).matches();
         }
     }
 
@@ -90,7 +92,7 @@ public class ScmResolverFactory {
     private class HeadPatternScmResolver extends AbstractPatternScmResolverEntry {
 
         HeadPatternScmResolver() {
-            super("^HEAD~([1-9]+)$");
+            super("^HEAD~(\\d+)$");
         }
 
         @Override

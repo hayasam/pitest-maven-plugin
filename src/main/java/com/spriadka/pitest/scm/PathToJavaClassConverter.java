@@ -2,6 +2,7 @@ package com.spriadka.pitest.scm;
 
 import java.io.File;
 import java.util.function.Function;
+import org.apache.maven.plugin.logging.Log;
 
 public class PathToJavaClassConverter implements Function<String, String> {
 
@@ -16,7 +17,6 @@ public class PathToJavaClassConverter implements Function<String, String> {
         final File f = new File(s);
         final String modifiedFilePath = f.getAbsolutePath();
         final String fileName = f.getName();
-
         if (modifiedFilePath.startsWith(this.sourceRoot)
             && (fileName.indexOf('.') != -1)) {
             return createClassGlobFromFilePath(this.sourceRoot, modifiedFilePath);

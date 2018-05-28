@@ -34,9 +34,11 @@ public class VersionScmResolver extends AbstractScmResolver {
         try {
             changeLogScmResult = executeCommitChangelog(revision);
         } catch (ScmException scme) {
+            log.info("Commit changelog not successful");
             try {
                 changeLogScmResult = executeTagChangelog(changeLogScmResult, revision);
             } catch (ScmException scme1) {
+                log.info("Tag changelog not successful");
                 try {
                     changeLogScmResult = executeBranchChangelog(changeLogScmResult, revision);
                 } catch (ScmException scme2) {

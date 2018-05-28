@@ -11,11 +11,14 @@ public class ScmConfiguration implements ConfigurationSection {
 
     private String connectionType;
 
+    private String root;
+
     @Override
     public List<ConfigurationItem> registerConfigurationItems() {
         return Arrays.asList(new ConfigurationItem("range", "pitest.scm.range", "HEAD"),
             new ConfigurationItem("include", "pitest.scm.include", new String[0]),
-            new ConfigurationItem("connectionType","pitest.scm.connectionType","connection"));
+            new ConfigurationItem("connectionType","pitest.scm.connectionType","connection"),
+            new ConfigurationItem("root", "pitest.scm.root", null));
     }
 
     public String getRange() {
@@ -42,6 +45,14 @@ public class ScmConfiguration implements ConfigurationSection {
         this.connectionType = connectionType;
     }
 
+    public void setRoot(String root) {
+        this.root = root;
+    }
+
+    public String getRoot() {
+        return root;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (obj == null) {
@@ -64,6 +75,7 @@ public class ScmConfiguration implements ConfigurationSection {
     public int hashCode() {
         int hash = 7;
         hash = 31 * hash + range.hashCode();
+        hash = 31 * hash + root.hashCode();
         hash = 31 * hash + Arrays.deepHashCode(this.include);
         hash = 31 * hash + connectionType.hashCode();
         return hash;
