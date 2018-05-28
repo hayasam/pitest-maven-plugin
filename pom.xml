@@ -68,8 +68,9 @@
     </dependency>
     <dependency>
       <groupId>org.apache.maven.scm</groupId>
-      <artifactId>maven-scm-provider-gitexe</artifactId>
+      <artifactId>maven-scm-providers-standard</artifactId>
       <version>${scm.version}</version>
+      <type>pom</type>
     </dependency>
     <dependency>
       <groupId>org.apache.maven.plugin-tools</groupId>

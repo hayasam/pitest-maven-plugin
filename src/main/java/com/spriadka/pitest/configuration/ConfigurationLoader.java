@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -15,7 +16,7 @@ public class ConfigurationLoader {
     public static final String PITEST_YAML = "pitest.yaml";
     public static final String PITEST_CONFIG = "pitest.config";
 
-    public static PITestConfiguration load(File projectDir) throws MojoExecutionException {
+    public static PITestConfiguration load(File projectDir) {
         final String customConfigFilePath = System.getProperty(PITEST_CONFIG);
         File configFile;
         if (isCustomConfigFileValid(customConfigFilePath)) {
@@ -23,13 +24,16 @@ public class ConfigurationLoader {
         } else {
             configFile = resolveConfigFileUsingDefaultStrategy(projectDir);
         }
+        if (configFile == null) {
+            return ObjectMapper.mapTo(PITestConfiguration.class, Collections.emptyMap());
+        }
         return loadConfigurationFromFile(configFile);
     }
 
-    private static File resolveConfigFileUsingDefaultStrategy(File projectDir) throws MojoExecutionException {
+    private static File resolveConfigFileUsingDefaultStrategy(File projectDir) {
         return Arrays.stream(projectDir.listFiles())
             .filter(file -> file.getName().equals(PITEST_YML) || file.getName().equals(PITEST_YAML))
-            .findFirst().orElseThrow(() -> new MojoExecutionException("Failed to find a valid config file"));
+            .findFirst().orElse(null);
     }
 
     private static PITestConfiguration loadConfigurationFromFile(File configFile) {
